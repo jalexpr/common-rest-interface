@@ -55,9 +55,8 @@ public class RestClientService {
     public <T extends BaseResponse<? extends ResponseItem>> T post(String serviceName, String urn, Object request, Class<T> clazz) {
         String uri = String.format("%s/%s", serviceName, urn);
         HttpEntity payload = makeEntity(request);
-        T response = null;
         try {
-            response = restTemplate.postForObject(uri, payload, clazz);
+            T response = restTemplate.postForObject(uri, payload, clazz);
             validateResponse(response, serviceName);
             return response;
         } catch (HttpClientErrorException clientException) {
@@ -78,6 +77,21 @@ public class RestClientService {
         } catch (Throwable e) {
             throw new RestCommonRuntimeException(String.format("%s communication failed: %s -> %s\n\nRequest to uri %s was:\n%s",
                     uri, e.getClass().getName(), e.getMessage(), uri, "empty"));
+        }
+    }
+
+    public <T extends BaseResponse<? extends ResponseItem>> T get(String serviceName, String urn, Class<T> clazz) {
+        String uri = String.format("%s/%s", serviceName, urn);
+        try {
+            T response = restTemplate.getForObject(uri, clazz);
+            validateResponse(response, serviceName);
+            return response;
+        } catch (HttpClientErrorException clientException) {
+            log.warn("Service response error: {}\n\nRequest to uri {}", clientException.getStatusCode(), uri);
+            throw new RestCommonRuntimeException(String.format("Cannot connected to uri %s, error %s", uri, clientException.getStatusCode()));
+        } catch (Throwable e) {
+            throw new RestCommonRuntimeException(String.format("%s communication failed: %s -> %s\n\nRequest to uri %s",
+                    serviceName, e.getClass().getName(), e.getMessage(), uri));
         }
     }
 
